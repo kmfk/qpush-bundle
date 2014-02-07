@@ -80,7 +80,7 @@ uecode_qpush:
 
 ####Full Configuration:
 
-A full configuration might look like the follow:
+A full configuration might look like the following:
 
 ######Example
 
