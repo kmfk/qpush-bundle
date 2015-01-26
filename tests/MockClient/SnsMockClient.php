@@ -50,6 +50,13 @@ class SnsMockClient
         ]);
     }
 
+    public function getTopicAttributes(array $args)
+    {
+        return [
+           'TopicArn' => 'long_topic_arn_string'
+        ];
+    }
+
     public function listSubscriptionsByTopic(array $args)
     {
         return new ArrayCollection([

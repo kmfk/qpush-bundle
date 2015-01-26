@@ -95,21 +95,6 @@ class AbstractProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($name, 'test');
     }
 
-    public function testGetNameWithPrefix()
-    {
-        $name = $this->provider->getNameWithPrefix();
-
-        $this->assertEquals(sprintf('%s_%s', ProviderInterface::QPUSH_PREFIX, 'test'), $name);
-    }
-
-    public function testGetNameWithPrefixProvidedName()
-    {
-        $provider = $this->getTestProvider(['queue_name' => 'foo']);
-        $name = $provider->getNameWithPrefix();
-
-        $this->assertEquals('foo', $name);
-    }
-
     public function testGetOptions()
     {
         $options = $this->provider->getOptions();
