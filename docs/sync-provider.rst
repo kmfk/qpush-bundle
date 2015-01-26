@@ -17,8 +17,8 @@ configuration is necessary.
 
     uecode_qpush:
         providers:
-            in_band:
+            dev_provider:
                 driver: sync
         queues:
             my_queue_name:
-                provider: in_band
+                provider: dev_provider

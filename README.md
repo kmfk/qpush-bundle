@@ -55,18 +55,24 @@ and provider options in the [full documentation](http://qpush-bundle.rtfd.org).
 ```yaml
 #app/config.yml
 
+# Allowed drivers are `ironmq`, `aws`, and `sync`
+
 uecode_qpush:
     providers:
-        ironmq:
+        iron_provider:
+            driver:     ironmq
             token:      YOUR_IRON_MQ_TOKEN_HERE
             project_id: YOUR_IRON_MQ_PROJECT_ID_HERE
-        aws:
+        aws_provider:
+            driver: aws
             key:    YOUR_AWS_KEY_HERE
             secret: YOUR_AWS_SECRET_HERE
             region: YOUR_AWS_REGION_HERE
+        dev_provider:
+            driver: sync
     queues:
         my_queue_name:
-            provider: ironmq #or aws
+            provider: aws_provider
             options:
                 push_notifications: true
                 subscribers:

@@ -104,25 +104,25 @@ A working configuration would look like the following
         cache_service: null
         logging_enabled: true
         providers:
-            aws:
+            aws_east_provider:
                 driver: aws #optional for providers named 'aws' or 'ironmq'
                 key: YOUR_AWS_KEY_HERE
                 secret: YOUR_AWS_SECRET_HERE
-                region: YOUR_AWS_REGION_HERE
-            another_aws_provider:
+                region: us-east-1
+            aws_west_provider:
                 driver: aws #required for named providers
                 key: YOUR_AWS_KEY_HERE
                 secret: YOUR_AWS_SECRET_HERE
-                region: YOUR_AWS_REGION_HERE
-            ironmq:
+                region: us-west-1
+            ironmq_provider:
                 driver: aws #optional for providers named 'aws' or 'ironmq'
                 token: YOUR_IRONMQ_TOKEN_HERE
                 project_id: YOUR_IRONMQ_PROJECT_ID_HERE
-            in_band:
+            dev_provider:
                 driver: sync
         queues:
             my_queue_name:
-                provider: ironmq #or aws or in_band or another_aws_provider
+                provider: ironmq_provider #or aws_east_provider etc
                 options:
                     push_notifications:     true
                     notification_retries:   3
