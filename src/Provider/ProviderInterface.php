@@ -31,11 +31,6 @@ use Symfony\Bridge\Monolog\Logger;
 interface ProviderInterface
 {
     /**
-     * Prefix prepended to the queue names
-     */
-    const QPUSH_PREFIX = 'qpush';
-
-    /**
      * Constructor for Provider classes
      *
      * @param string $name    Name of the Queue the provider is for
@@ -52,17 +47,6 @@ interface ProviderInterface
      * @return string
      */
     public function getName();
-
-    /**
-     * Returns the Queue Name prefixed with the QPush Prefix
-     *
-     * If a Queue name is explicitly set in the configuration, use just that
-     * name - which is beneficial for reuising existing queues not created by
-     * qpush.  Otherwise, create the queue with the qpush prefix/
-     *
-     * @return string
-     */
-    public function getNameWithPrefix();
 
     /**
      * Returns the Queue Provider name

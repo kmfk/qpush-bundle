@@ -72,18 +72,6 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * {@inheritDoc}
      */
-    public function getNameWithPrefix()
-    {
-        if (!empty($this->options['queue_name'])) {
-            return $this->options['queue_name'];
-        }
-
-        return sprintf("%s_%s", self::QPUSH_PREFIX, $this->name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function getOptions()
     {
         return $this->options;

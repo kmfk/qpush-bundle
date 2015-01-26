@@ -23,6 +23,7 @@
 namespace Uecode\Bundle\QPushBundle\Provider;
 
 use Aws\Common\Aws;
+use Aws\Sns\Exception\NotFoundException;
 use Aws\Sqs\SqsClient;
 use Aws\Sqs\Exception\SqsException;
 use Doctrine\Common\Cache\Cache;
@@ -75,6 +76,9 @@ class AwsProvider extends AbstractProvider
         $this->logger   = $logger;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getProvider()
     {
         return "AWS";
@@ -123,33 +127,28 @@ class AwsProvider extends AbstractProvider
      */
     public function destroy()
     {
-        $key = $this->getNameWithPrefix() . '_url';
-        $this->cache->delete($key);
-
         if ($this->queueExists()) {
-            // Delete the SQS Queue
-            $this->sqs->deleteQueue([
-                'QueueUrl' => $this->queueUrl
-            ]);
 
-            $this->log(200,"SQS Queue removed", ['QueueUrl' => $this->queueUrl]);
+            $key = $this->getName() . '_url';
+            $this->cache->delete($key);
+
+            $context = ['QueueUrl' => $this->queueUrl];
+
+            // Delete the SQS Queue
+            $this->sqs->deleteQueue($context);
+            $this->log(200,"SQS Queue removed", $context);
         }
 
-        $key = $this->getNameWithPrefix() . '_arn';
-        $this->cache->delete($key);
+        if ($this->topicExists()) {
 
-        if ($this->topicExists() || !empty($this->queueUrl)) {
+            $key = $this->getName() . '_arn';
+            $this->cache->delete($key);
+
+            $context = ['TopicArn' => $this->topicArn];
+
             // Delete the SNS Topic
-            $topicArn = !empty($this->topicArn)
-                ? $this->topicArn
-                : str_replace('sqs', 'sns', $this->queueUrl)
-            ;
-
-            $this->sns->deleteTopic([
-                'TopicArn' => $topicArn
-            ]);
-
-            $this->log(200,"SNS Topic removed", ['TopicArn' => $topicArn]);
+            $this->sns->deleteTopic($context);
+            $this->log(200,"SNS Topic removed", $context);
         }
 
         return true;
@@ -180,10 +179,10 @@ class AwsProvider extends AbstractProvider
             }
 
             $message    = [
-                'default'   => $this->getNameWithPrefix(),
+                'default'   => $this->getName(),
                 'sqs'       => json_encode($message),
-                'http'      => $this->getNameWithPrefix(),
-                'https'     => $this->getNameWithPrefix(),
+                'http'      => $this->getName(),
+                'https'     => $this->getName(),
             ];
 
             $result = $this->sns->publish([
@@ -256,9 +255,7 @@ class AwsProvider extends AbstractProvider
 
             $message = new Message($id, $body, $metadata);
 
-            $context = ['MessageId' => $id];
-            $this->log(200,"Message fetched from SQS Queue", $context);
-
+            $this->log(200,"Message fetched from SQS Queue", ['MessageId' => $id]);
         }
 
         return $messages;
@@ -275,15 +272,9 @@ class AwsProvider extends AbstractProvider
             return false;
         }
 
-        $this->sqs->deleteMessage([
-            'QueueUrl'      => $this->queueUrl,
-            'ReceiptHandle' => $id
-        ]);
+        $context = ['QueueUrl' => $this->queueUrl, 'ReceiptHandle' => $id];
 
-        $context = [
-            'QueueUrl'      => $this->queueUrl,
-            'ReceiptHandle' => $id
-        ];
+        $this->sqs->deleteMessage($context);
         $this->log(200,"Message deleted from SQS Queue", $context);
 
         return true;
@@ -304,7 +295,7 @@ class AwsProvider extends AbstractProvider
             return true;
         }
 
-        $key = $this->getNameWithPrefix() . '_url';
+        $key = $this->getName() . '_url';
         if ($this->cache->contains($key)) {
             $this->queueUrl = $this->cache->fetch($key);
 
@@ -312,10 +303,12 @@ class AwsProvider extends AbstractProvider
         }
 
         $result = $this->sqs->getQueueUrl([
-            'QueueName' => $this->getNameWithPrefix()
+            'QueueName' => $this->getName()
         ]);
 
         if($this->queueUrl = $result->get('QueueUrl')) {
+            $this->cache->save($key, $this->queueUrl);
+
             return true;
         }
 
@@ -333,7 +326,7 @@ class AwsProvider extends AbstractProvider
     public function createQueue()
     {
         $result = $this->sqs->createQueue([
-            'QueueName' => $this->getNameWithPrefix(),
+            'QueueName' => $this->getName(),
             'Attributes'    => [
                 'VisibilityTimeout'             => $this->options['message_timeout'],
                 'MessageRetentionPeriod'        => $this->options['message_expiration'],
@@ -343,7 +336,7 @@ class AwsProvider extends AbstractProvider
 
         $this->queueUrl = $result->get('QueueUrl');
 
-        $key = $this->getNameWithPrefix() . '_url';
+        $key = $this->getName() . '_url';
         $this->cache->save($key, $this->queueUrl);
 
         $this->log(200, "Created SQS Queue", ['QueueUrl' => $this->queueUrl]);
@@ -402,9 +395,28 @@ class AwsProvider extends AbstractProvider
             return true;
         }
 
-        $key = $this->getNameWithPrefix() . '_arn';
+        $key = $this->getName() . '_arn';
         if ($this->cache->contains($key)) {
             $this->topicArn = $this->cache->fetch($key);
+
+            return true;
+        }
+
+        if (!empty($this->queueUrl)) {
+            $queueArn = $this->sqs->getQueueArn($this->queueUrl);
+
+            $topicArn = str_replace('sqs', 'sns', $queueArn);
+
+            try {
+                $result   = $this->sns->getTopicAttributes([
+                    'TopicArn' => $topicArn
+                ]);
+            } catch (NotFoundException $e) {
+                return false;
+            }
+
+            $this->topicArn = $topicArn;
+            $this->cache->save($key, $this->topicArn);
 
             return true;
         }
@@ -428,12 +440,12 @@ class AwsProvider extends AbstractProvider
         }
 
         $result = $this->sns->createTopic([
-            'Name' => $this->getNameWithPrefix()
+            'Name' => $this->getName()
         ]);
 
         $this->topicArn = $result->get('TopicArn');
 
-        $key = $this->getNameWithPrefix() . '_arn';
+        $key = $this->getName() . '_arn';
         $this->cache->save($key, $this->topicArn);
 
         $this->log(200, "Created SNS Topic", ['TopicARN' => $this->topicArn]);
@@ -542,8 +554,8 @@ class AwsProvider extends AbstractProvider
     public function onNotification(NotificationEvent $event)
     {
         if (NotificationEvent::TYPE_SUBSCRIPTION == $event->getType()) {
-            $topicArn   = $event->getNotification()->getMetadata()->get('TopicArn');
-            $token      = $event->getNotification()->getMetadata()->get('Token');
+            $topicArn = $event->getNotification()->getMetadata()->get('TopicArn');
+            $token    = $event->getNotification()->getMetadata()->get('Token');
 
             $this->sns->confirmSubscription([
                 'TopicArn'  => $topicArn,

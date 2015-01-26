@@ -58,6 +58,9 @@ class IronMqProvider extends AbstractProvider
         $this->logger   = $logger;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getProvider()
     {
         return "IronMQ";
@@ -90,10 +93,9 @@ class IronMqProvider extends AbstractProvider
             $params = ['push_type' => 'pull'];
         }
 
-        $result = $this->ironmq->updateQueue($this->getNameWithPrefix(), $params);
-        $this->queue = $result;
+        $key = $this->getName();
 
-        $key = $this->getNameWithPrefix();
+        $this->queue = $this->ironmq->updateQueue($key, $params);
         $this->cache->save($key, json_encode($this->queue));
 
         $this->log(200, "Queue has been created.", $params);
@@ -108,7 +110,7 @@ class IronMqProvider extends AbstractProvider
     {
         // Catch `queue not found` exceptions, throw the rest.
         try {
-            $this->ironmq->deleteQueue($this->getNameWithPrefix());
+            $this->ironmq->deleteQueue($this->getName());
         } catch ( \Exception $e) {
             if (false !== strpos($e->getMessage(), "Queue not found")) {
                 $this->log(400, "Queue did not exist");
@@ -117,7 +119,7 @@ class IronMqProvider extends AbstractProvider
             }
         }
 
-        $key = $this->getNameWithPrefix();
+        $key = $this->getName();
         $this->cache->delete($key);
 
         $this->log(200, "Queue has been destroyed.");
@@ -140,7 +142,7 @@ class IronMqProvider extends AbstractProvider
         }
 
         $result = $this->ironmq->postMessage(
-            $this->getNameWithPrefix(),
+            $this->getName(),
             json_encode($message + ['_qpush_queue' => $this->name]),
             [
                 'timeout'       => $options['message_timeout'],
@@ -170,7 +172,7 @@ class IronMqProvider extends AbstractProvider
         }
 
         $messages = $this->ironmq->getMessages(
-            $this->getNameWithPrefix(),
+            $this->getName(),
             $options['messages_to_receive'],
             $options['message_timeout']
         );
@@ -207,7 +209,7 @@ class IronMqProvider extends AbstractProvider
     public function delete($id)
     {
         try {
-            $result = $this->ironmq->deleteMessage($this->getNameWithPrefix(), $id);
+            $result = $this->ironmq->deleteMessage($this->getName(), $id);
             $this->log(200, "Message deleted.", ['message_id' => $id]);
         } catch ( \Exception $e) {
             if (false !== strpos($e->getMessage(), "Queue not found")) {
@@ -235,7 +237,7 @@ class IronMqProvider extends AbstractProvider
             return true;
         }
 
-        $key = $this->getNameWithPrefix();
+        $key = $this->getName();
         if ($this->cache->contains($key)) {
             $this->queue = json_decode($this->cache->fetch($key));
 
