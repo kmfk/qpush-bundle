@@ -22,9 +22,9 @@
 
 namespace Uecode\Bundle\QPushBundle\Provider;
 
-
 use Doctrine\Common\Cache\Cache;
 use Symfony\Bridge\Monolog\Logger;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Uecode\Bundle\QPushBundle\Event\Events;
 use Uecode\Bundle\QPushBundle\Event\MessageEvent;
 use Uecode\Bundle\QPushBundle\Message\Message;
@@ -32,17 +32,14 @@ use Uecode\Bundle\QPushBundle\Message\Message;
 class SyncProvider extends AbstractProvider
 {
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     * Symfony Event Dispatcher
+     *
+     * @var EventDispatcherInterface
      */
     protected $dispatcher;
 
-    public function __construct(
-        $name,
-        array $options,
-        $client,
-        Cache $cache,
-        Logger $logger
-    ) {
+    public function __construct($name, array $options, $client, Cache $cache, Logger $logger)
+    {
         $this->name = $name;
         $this->options = $options;
         $this->dispatcher = $client;
@@ -50,11 +47,17 @@ class SyncProvider extends AbstractProvider
         $this->logger = $logger;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getProvider()
     {
         return 'Sync';
     }
 
+    /**
+     * Immediately dispatches an event message in a synchronize manner
+     */
     public function publish(array $message, array $options = [])
     {
         $message = new Message(time(), $message, []);
@@ -75,4 +78,4 @@ class SyncProvider extends AbstractProvider
     public function delete($id) {}
 
     public function receive(array $options = []) {}
-} 
+}
