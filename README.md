@@ -65,10 +65,9 @@ uecode_qpush:
             secret: YOUR_AWS_SECRET_HERE
             region: YOUR_AWS_REGION_HERE
     queues:
-        my_queue_key:
+        my_queue_name:
             provider: ironmq #or aws
             options:
-                queue_name: my_queue_name #optional. the queue name used on the provider
                 push_notifications: true
                 subscribers:
                     - { endpoint: http://example.com/qpush, protocol: http }
@@ -92,10 +91,10 @@ public function publishAction()
     $message = ['foo' => 'bar'];
 
     // fetch your provider service from the container
-    $this->get('uecode_qpush')->get('my_queue_key')->publish($message);
+    $this->get('uecode_qpush')->get('my_queue_name')->publish($message);
 
     // you can also fetch it directly
-    $this->get('uecode_qpush.my_queue_key')->publish($message);
+    $this->get('uecode_qpush.my_queue_name')->publish($message);
 }
 
 ```
@@ -112,7 +111,7 @@ services:
     my_example_service:
     	class: My\Bundle\ExampleBundle\Service\ExampleService
     	tags:
-    		- { name: uecode_qpush.event_listener, event: my_queue_key.message_received, method: onMessageReceived }
+    		- { name: uecode_qpush.event_listener, event: my_queue_name.message_received, method: onMessageReceived }
 ```
 
 ######Example

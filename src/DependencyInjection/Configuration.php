@@ -54,9 +54,9 @@ class Configuration implements ConfigurationInterface
 
     private function getProvidersNode()
     {
-        $treeBuilder    = new TreeBuilder();
-        $node           = $treeBuilder->root('providers');
-        $requirements   = [
+        $treeBuilder  = new TreeBuilder();
+        $node         = $treeBuilder->root('providers');
+        $requirements = [
             'aws' => ['key', 'secret'],
             'ironmq' => ['token', 'project_id'],
             'sync' => [],
@@ -132,10 +132,6 @@ class Configuration implements ConfigurationInterface
                     ->end()
                     ->arrayNode('options')
                         ->children()
-                            ->scalarNode('queue_name')
-                                ->defaultNull()
-                                ->info('The actual name of the queue')
-                            ->end()
                             ->booleanNode('push_notifications')
                                 ->defaultFalse()
                                 ->info('Whether notifications are sent to the subscribers')
