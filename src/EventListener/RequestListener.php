@@ -134,10 +134,10 @@ class RequestListener
         if ($type === 'Notification') {
 
             // We put the queue name in the Subject field
-            $queue                  = $notification['Subject'];
-            $metadata['Subject']    = $queue;
+            $queue               = $notification['Subject'];
+            $metadata['Subject'] = $queue;
 
-            $notification           = new Notification(
+            $notification = new Notification(
                 $notification['MessageId'],
                 $notification['Message'],
                 $metadata
@@ -153,12 +153,12 @@ class RequestListener
 
         // For subscription notifications, we need to parse the Queue from
         // the Topic ARN
-        $arnParts           = explode(':', $notification['TopicArn']);
-        $last               = end($arnParts);
-        $queue              = str_replace('qpush_', '', $last);
+        $arnParts = explode(':', $notification['TopicArn']);
+        $last     = end($arnParts);
+        $queue    = str_replace('qpush_', '', $last);
 
         // Get the token for the Subscription Confirmation
-        $metadata['Token']  = $notification['Token'];
+        $metadata['Token'] = $notification['Token'];
 
         $notification = new Notification(
             $notification['MessageId'],
